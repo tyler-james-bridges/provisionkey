@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { isSetup, setupPin, unlockWithPin } from '@/lib/vault-store';
+import { isSetup, setupPin, unlockWithPin, unlockWithBiometric } from '@/lib/vault-store';
 
 export default function VaultUnlockScreen() {
   const router = useRouter();
@@ -95,16 +95,14 @@ export default function VaultUnlockScreen() {
 
   const handleBiometric = async () => {
     try {
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock Vault',
-        fallbackLabel: 'Use PIN',
-      });
-
-      if (result.success) {
+      const success = await unlockWithBiometric();
+      if (success) {
         router.replace('/vault/dashboard');
+      } else {
+        Alert.alert('Biometric Unlock Failed', 'Please use your PIN instead.');
       }
     } catch (error) {
-      console.error('Biometric auth error:', error);
+      Alert.alert('Error', 'Biometric authentication failed. Use your PIN.');
     }
   };
 
