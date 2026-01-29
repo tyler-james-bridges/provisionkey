@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { isSetup, setupPin, unlockWithPin, unlockWithBiometric } from '@/lib/vault-store';
+import { isSetup, setupPin, unlockWithPin, unlockWithBiometric, getSettings } from '@/lib/vault-store';
 
 export default function VaultUnlockScreen() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function VaultUnlockScreen() {
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [hasBiometric, setHasBiometric] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
+  const [maxAttempts, setMaxAttempts] = useState(10);
 
   useEffect(() => {
     checkSetup();
@@ -23,6 +24,13 @@ export default function VaultUnlockScreen() {
   const checkSetup = async () => {
     const setup = await isSetup();
     setSetupComplete(setup);
+    if (setup) {
+      const settings = await getSettings();
+      if (settings) {
+        setFailedAttempts(settings.failedAttempts);
+        setMaxAttempts(settings.maxFailedAttempts);
+      }
+    }
     setLoading(false);
   };
 
@@ -78,14 +86,14 @@ export default function VaultUnlockScreen() {
         setFailedAttempts(newAttempts);
         setPin('');
 
-        if (newAttempts >= 5) {
+        if (newAttempts >= maxAttempts) {
           Alert.alert(
-            'Too Many Attempts',
-            'Vault has been locked. Please try again later.',
-            [{ text: 'OK' }]
+            'Vault Wiped',
+            'Too many failed attempts. All vault data has been destroyed.',
+            [{ text: 'OK', onPress: () => { setSetupComplete(false); setFailedAttempts(0); } }]
           );
         } else {
-          Alert.alert('Error', `Incorrect PIN. ${5 - newAttempts} attempts remaining`);
+          Alert.alert('Error', `Incorrect PIN. ${maxAttempts - newAttempts} attempts remaining.`);
         }
       }
     } catch (error) {

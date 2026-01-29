@@ -205,3 +205,44 @@ export async function isSetup(): Promise<boolean> {
   const settings = await getSettings();
   return settings !== null;
 }
+
+export async function setMaxFailedAttempts(max: number): Promise<void> {
+  const settings = await getSettings();
+  if (!settings) throw new Error('Vault not set up');
+  settings.maxFailedAttempts = max;
+  await saveSettings(settings);
+}
+
+export async function exportVault(): Promise<string> {
+  if (!derivedEncryptionKey) throw new Error('Vault is locked');
+
+  const raw = await AsyncStorage.getItem(VAULT_KEY);
+  const settings = await getSettings();
+  if (!settings) throw new Error('Vault not set up');
+
+  const payload = JSON.stringify({
+    version: 1,
+    salt: settings.salt,
+    pinHash: settings.pinHash,
+    vault: raw || null,
+    exportedAt: Date.now(),
+  });
+
+  // Encrypt the entire export with the current key
+  const encrypted = await encrypt(payload, derivedEncryptionKey);
+  return encrypted;
+}
+
+export async function importVault(backup: string, pin: string): Promise<void> {
+  // We need to derive the key from the provided PIN + original salt
+  // First decrypt with current key to get the payload
+  if (!derivedEncryptionKey) throw new Error('Vault is locked');
+
+  const payload = JSON.parse(await decrypt(backup, derivedEncryptionKey));
+
+  if (payload.version !== 1) throw new Error('Unsupported backup version');
+  if (!payload.vault) throw new Error('Backup contains no vault data');
+
+  // Replace vault data
+  await AsyncStorage.setItem(VAULT_KEY, payload.vault);
+}

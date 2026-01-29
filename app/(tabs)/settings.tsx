@@ -2,13 +2,15 @@ import { StyleSheet, ScrollView, View, Text, Pressable, Alert, Switch } from 're
 import { useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { wipeVault, changePIN, isSetup, getSettings, setBiometricEnabled as vaultSetBiometric, isUnlocked } from '@/lib/vault-store';
+import * as Clipboard from 'expo-clipboard';
+import { wipeVault, changePIN, isSetup, getSettings, setBiometricEnabled as vaultSetBiometric, isUnlocked, setMaxFailedAttempts, exportVault, importVault } from '@/lib/vault-store';
 import Constants from 'expo-constants';
 
 export default function SettingsScreen() {
   const [vaultSetup, setVaultSetup] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [maxAttempts, setMaxAttempts] = useState(10);
 
   useEffect(() => {
     checkVaultStatus();
@@ -22,6 +24,7 @@ export default function SettingsScreen() {
       const settings = await getSettings();
       if (settings) {
         setBiometricEnabled(settings.biometricEnabled);
+        setMaxAttempts(settings.maxFailedAttempts);
       }
     }
   };
@@ -43,6 +46,73 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to update biometric setting');
     }
+  };
+
+  const handleSelfDestructConfig = () => {
+    const options = [5, 10, 15, 20];
+    Alert.alert(
+      'Self-Destruct Attempts',
+      `Vault will wipe after this many failed PIN attempts. Currently set to ${maxAttempts}.`,
+      [
+        ...options.map((n) => ({
+          text: `${n} attempts${n === maxAttempts ? ' (current)' : ''}`,
+          onPress: async () => {
+            try {
+              await setMaxFailedAttempts(n);
+              setMaxAttempts(n);
+              Alert.alert('Updated', `Vault will self-destruct after ${n} failed attempts.`);
+            } catch {
+              Alert.alert('Error', 'Failed to update setting');
+            }
+          },
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]
+    );
+  };
+
+  const handleExport = async () => {
+    if (!isUnlocked()) {
+      Alert.alert('Vault Locked', 'Unlock your vault first to export.');
+      return;
+    }
+    try {
+      const backup = await exportVault();
+      await Clipboard.setStringAsync(backup);
+      Alert.alert('Exported', 'Encrypted backup copied to clipboard. Paste it somewhere safe — this is your encrypted vault backup.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export vault');
+    }
+  };
+
+  const handleImport = () => {
+    if (!isUnlocked()) {
+      Alert.alert('Vault Locked', 'Unlock your vault first to import.');
+      return;
+    }
+    Alert.alert(
+      'Import Backup',
+      'This will replace your current vault data with the backup from your clipboard. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Import',
+          onPress: async () => {
+            try {
+              const backup = await Clipboard.getStringAsync();
+              if (!backup) {
+                Alert.alert('Error', 'Clipboard is empty');
+                return;
+              }
+              await importVault(backup, '');
+              Alert.alert('Success', 'Vault data restored from backup.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to import. Make sure the backup was created with the same PIN.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleChangePIN = () => {
@@ -160,6 +230,18 @@ export default function SettingsScreen() {
                 />
               </View>
             )}
+            <Pressable style={styles.settingItem} onPress={handleSelfDestructConfig}>
+              <View style={styles.settingInfo}>
+                <FontAwesome name="bomb" size={20} color="#FF4444" />
+                <View style={styles.settingText}>
+                  <Text style={styles.settingTitle}>Self-Destruct</Text>
+                  <Text style={styles.settingDescription}>
+                    Wipe after {maxAttempts} failed attempts
+                  </Text>
+                </View>
+              </View>
+              <FontAwesome name="chevron-right" size={16} color="#8888AA" />
+            </Pressable>
           </>
         )}
 
@@ -172,6 +254,38 @@ export default function SettingsScreen() {
           </View>
         )}
       </View>
+
+      {vaultSetup && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Backup</Text>
+
+          <Pressable style={styles.settingItem} onPress={handleExport}>
+            <View style={styles.settingInfo}>
+              <FontAwesome name="upload" size={20} color="#6C63FF" />
+              <View style={styles.settingText}>
+                <Text style={styles.settingTitle}>Export Vault</Text>
+                <Text style={styles.settingDescription}>
+                  Copy encrypted backup to clipboard
+                </Text>
+              </View>
+            </View>
+            <FontAwesome name="chevron-right" size={16} color="#8888AA" />
+          </Pressable>
+
+          <Pressable style={styles.settingItem} onPress={handleImport}>
+            <View style={styles.settingInfo}>
+              <FontAwesome name="download" size={20} color="#6C63FF" />
+              <View style={styles.settingText}>
+                <Text style={styles.settingTitle}>Import Backup</Text>
+                <Text style={styles.settingDescription}>
+                  Restore vault from clipboard backup
+                </Text>
+              </View>
+            </View>
+            <FontAwesome name="chevron-right" size={16} color="#8888AA" />
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
