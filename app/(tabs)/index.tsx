@@ -1,97 +1,173 @@
-import { StyleSheet, ScrollView, View, Text, Pressable, SafeAreaView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  Text,
+  Pressable,
+  SafeAreaView,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import EmergencyBanner from '@/components/EmergencyBanner';
-import GuideCard from '@/components/GuideCard';
-import { guides } from '@/lib/guides-data';
+import HowItWorks from '@/components/HowItWorks';
+import FeatureGrid from '@/components/FeatureGrid';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+function useFadeIn(count: number, baseDelay = 0, stagger = 200) {
+  const opacities = useRef(Array.from({ length: count }, () => new Animated.Value(0))).current;
+  const translates = useRef(Array.from({ length: count }, () => new Animated.Value(30))).current;
+
+  useEffect(() => {
+    const animations = opacities.map((_, i) =>
+      Animated.parallel([
+        Animated.timing(opacities[i], {
+          toValue: 1,
+          duration: 500,
+          delay: baseDelay + i * stagger,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translates[i], {
+          toValue: 0,
+          duration: 500,
+          delay: baseDelay + i * stagger,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    Animated.parallel(animations).start();
+  }, []);
+
+  return opacities.map((o, i) => ({
+    opacity: o,
+    transform: [{ translateY: translates[i] }],
+  }));
+}
 
 export default function HomeScreen() {
   const router = useRouter();
 
-  // Get most important guides (first guide from each category)
-  const quickGuides = [
-    guides.find(g => g.category === 'basics'),
-    guides.find(g => g.category === 'hardware'),
-    guides.find(g => g.category === 'software'),
-    guides.find(g => g.category === 'recovery'),
-  ].filter(Boolean);
+  // Hero pulse animation
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.95,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  // Hero staggered fade-ins (6 elements)
+  const heroAnims = useFadeIn(6, 100, 200);
+
+  // Final CTA fade-ins (3 elements)
+  const ctaAnims = useFadeIn(3, 0, 200);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <FontAwesome name="shield" size={32} color="#6C63FF" />
-          <Text style={styles.title}>ProvisionKey</Text>
-        </View>
-        <Text style={styles.subtitle}>Your crypto emergency guide</Text>
-      </View>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* A. Hero Section */}
+        <View style={[styles.hero, { minHeight: SCREEN_HEIGHT * 0.8 }]}>
+          <Animated.View style={[styles.heroIconWrap, heroAnims[0], { transform: [{ scale: pulseAnim }] }]}>
+            <FontAwesome name="shield" size={80} color="#6C63FF" />
+          </Animated.View>
 
-      <EmergencyBanner />
+          <Animated.Text style={[styles.heroAppName, heroAnims[1]]}>
+            ProvisionKey
+          </Animated.Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Start Guides</Text>
-        <Text style={styles.sectionDescription}>
-          Essential guides to secure your crypto assets
-        </Text>
-        {quickGuides.map((guide) => guide && (
-          <GuideCard
-            key={guide.slug}
-            guide={guide}
-            onPress={() => router.push(`/guides/${guide.slug}`)}
-          />
-        ))}
-      </View>
+          <Animated.Text style={[styles.heroHeadline, heroAnims[2]]}>
+            Secure Your Crypto Legacy
+          </Animated.Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Get Started</Text>
-        <View style={styles.getStartedCard}>
-          <Text style={styles.getStartedTitle}>
-            <FontAwesome name="info-circle" size={18} color="#6C63FF" /> What is ProvisionKey?
-          </Text>
-          <Text style={styles.getStartedText}>
-            ProvisionKey is your comprehensive guide for cryptocurrency emergencies.
-            Whether you need to recover a wallet, secure your hardware device, or
-            plan for the unexpected, we provide step-by-step instructions.
-          </Text>
-          <Text style={styles.getStartedText}>
-            Our secure vault lets you store critical recovery information encrypted
-            on your device, accessible only to you.
-          </Text>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => router.push('/guides')}
-          >
-            <Text style={styles.primaryButtonText}>Browse All Guides</Text>
-            <FontAwesome name="arrow-right" size={16} color="#FFFFFF" />
-          </Pressable>
-        </View>
-      </View>
+          <Animated.Text style={[styles.heroSubtitle, heroAnims[3]]}>
+            Help your loved ones access your crypto in emergencies — without compromising security now.
+          </Animated.Text>
 
-      <View style={styles.features}>
-        <View style={styles.featureItem}>
-          <FontAwesome name="book" size={24} color="#6C63FF" />
-          <Text style={styles.featureTitle}>Step-by-Step Guides</Text>
-          <Text style={styles.featureText}>
-            Clear instructions for common crypto scenarios
-          </Text>
+          <Animated.View style={heroAnims[4]}>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.push('/guides')}
+            >
+              <Text style={styles.primaryButtonText}>Get Started</Text>
+              <FontAwesome name="arrow-right" size={16} color="#FFFFFF" />
+            </Pressable>
+          </Animated.View>
+
+          <Animated.View style={heroAnims[5]}>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => router.push('/vault')}
+            >
+              <Text style={styles.secondaryButtonText}>Set Up Vault</Text>
+            </Pressable>
+          </Animated.View>
         </View>
-        <View style={styles.featureItem}>
-          <FontAwesome name="lock" size={24} color="#6C63FF" />
-          <Text style={styles.featureTitle}>Secure Vault</Text>
-          <Text style={styles.featureText}>
-            Encrypted storage for recovery phrases and keys
-          </Text>
+
+        {/* B. Emergency Section */}
+        <View style={styles.sectionPadding}>
+          <View style={styles.emergencyCard}>
+            <View style={styles.emergencyHeader}>
+              <FontAwesome name="exclamation-triangle" size={28} color="#FF6666" />
+              <Text style={styles.emergencyLabel}>EMERGENCY ACCESS</Text>
+            </View>
+            <Text style={styles.emergencyDescription}>
+              In an emergency? Skip the learning and get immediate help recovering your crypto assets.
+            </Text>
+            <Pressable
+              style={styles.emergencyButton}
+              onPress={() => router.push('/guides/emergency-recovery')}
+            >
+              <Text style={styles.emergencyButtonText}>View Emergency Guide →</Text>
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.featureItem}>
-          <FontAwesome name="exclamation-triangle" size={24} color="#6C63FF" />
-          <Text style={styles.featureTitle}>Emergency Ready</Text>
-          <Text style={styles.featureText}>
-            Quick access when you need it most
-          </Text>
+
+        {/* C. How It Works */}
+        <HowItWorks />
+
+        {/* D. Feature Grid */}
+        <View style={styles.featureSection}>
+          <Text style={styles.featureSectionTitle}>Why ProvisionKey</Text>
+          <FeatureGrid />
         </View>
-      </View>
-    </ScrollView>
+
+        {/* E. Final CTA */}
+        <View style={styles.finalCta}>
+          <Animated.Text style={[styles.finalCtaTitle, ctaAnims[0]]}>
+            Ready to Protect Your Crypto?
+          </Animated.Text>
+          <Animated.Text style={[styles.finalCtaSubtitle, ctaAnims[1]]}>
+            Take the first step toward giving your loved ones access when it matters most.
+          </Animated.Text>
+          <Animated.View style={[styles.finalCtaButtons, ctaAnims[2]]}>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.push('/guides')}
+            >
+              <Text style={styles.primaryButtonText}>Get Started</Text>
+              <FontAwesome name="arrow-right" size={16} color="#FFFFFF" />
+            </Pressable>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => router.push('/vault')}
+            >
+              <Text style={styles.secondaryButtonText}>Set Up Vault</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -105,96 +181,145 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0A0A0F',
   },
-  header: {
-    padding: 24,
-    paddingTop: 32,
+
+  // Hero
+  hero: {
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 48,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
+  heroIconWrap: {
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 32,
+  heroAppName: {
+    fontSize: 42,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    marginBottom: 12,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#8888AA',
-  },
-  section: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
+  heroHeadline: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#8888AA',
+    textAlign: 'center',
     marginBottom: 16,
   },
-  getStartedCard: {
-    backgroundColor: '#141420',
-    borderRadius: 12,
-    padding: 20,
-    gap: 12,
-  },
-  getStartedTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  getStartedText: {
-    fontSize: 14,
+  heroSubtitle: {
+    fontSize: 16,
     color: '#8888AA',
-    lineHeight: 20,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+    paddingHorizontal: 12,
   },
   primaryButton: {
     backgroundColor: '#6C63FF',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 12,
+    height: 56,
+    width: 280,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginTop: 8,
+    gap: 10,
+    marginBottom: 12,
   },
   primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    borderWidth: 2,
+    borderColor: '#1F1F2E',
+    borderRadius: 12,
+    height: 56,
+    width: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+
+  // Emergency
+  sectionPadding: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  emergencyCard: {
+    backgroundColor: '#2A1515',
+    borderWidth: 2,
+    borderColor: 'rgba(255,68,68,0.3)',
+    borderRadius: 16,
+    padding: 24,
+  },
+  emergencyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  emergencyLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF6666',
+    letterSpacing: 1,
+  },
+  emergencyDescription: {
+    fontSize: 15,
+    color: '#8888AA',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  emergencyButton: {
+    backgroundColor: '#FF4444',
+    borderRadius: 12,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emergencyButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  features: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 20,
-    gap: 16,
+
+  // Feature section
+  featureSection: {
+    paddingVertical: 32,
   },
-  featureItem: {
-    flex: 1,
-    minWidth: 140,
-    backgroundColor: '#141420',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    gap: 8,
-  },
-  featureTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  featureSectionTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
+    marginBottom: 32,
   },
-  featureText: {
-    fontSize: 12,
+
+  // Final CTA
+  finalCta: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+  },
+  finalCtaTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  finalCtaSubtitle: {
+    fontSize: 16,
     color: '#8888AA',
     textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  finalCtaButtons: {
+    alignItems: 'center',
   },
 });
