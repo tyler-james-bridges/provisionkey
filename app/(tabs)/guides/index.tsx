@@ -4,10 +4,10 @@ import GuideCard from '@/components/GuideCard';
 import { guides } from '@/lib/guides-data';
 
 const categories = [
-  { id: 'basics', title: 'Basics', icon: 'graduation-cap' },
-  { id: 'hardware', title: 'Hardware Wallets', icon: 'microchip' },
-  { id: 'software', title: 'Software Wallets', icon: 'mobile' },
-  { id: 'recovery', title: 'Recovery', icon: 'life-ring' },
+  { id: 'basics', title: 'Basics' },
+  { id: 'hardware', title: 'Hardware Wallets' },
+  { id: 'software', title: 'Software Wallets' },
+  { id: 'recovery', title: 'Recovery' },
 ];
 
 export default function GuidesListScreen() {
