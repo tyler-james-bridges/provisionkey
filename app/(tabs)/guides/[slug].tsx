@@ -160,30 +160,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  related: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  relatedTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  relatedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#141420',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 8,
-  },
-  relatedItemTitle: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    flex: 1,
-  },
   errorContainer: {
     flex: 1,
     backgroundColor: '#0A0A0F',
