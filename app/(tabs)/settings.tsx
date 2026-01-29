@@ -2,7 +2,7 @@ import { StyleSheet, ScrollView, View, Text, Pressable, Alert, Switch } from 're
 import { useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { wipeVault, changePIN, isSetup } from '@/lib/vault-store';
+import { wipeVault, changePIN, isSetup, getSettings, setBiometricEnabled as vaultSetBiometric, isUnlocked } from '@/lib/vault-store';
 import Constants from 'expo-constants';
 
 export default function SettingsScreen() {
@@ -18,12 +18,31 @@ export default function SettingsScreen() {
   const checkVaultStatus = async () => {
     const setup = await isSetup();
     setVaultSetup(setup);
+    if (setup) {
+      const settings = await getSettings();
+      if (settings) {
+        setBiometricEnabled(settings.biometricEnabled);
+      }
+    }
   };
 
   const checkBiometric = async () => {
     const compatible = await LocalAuthentication.hasHardwareAsync();
     const enrolled = await LocalAuthentication.isEnrolledAsync();
     setBiometricAvailable(compatible && enrolled);
+  };
+
+  const handleBiometricToggle = async (enabled: boolean) => {
+    if (!isUnlocked()) {
+      Alert.alert('Vault Locked', 'Unlock your vault first before changing biometric settings.');
+      return;
+    }
+    try {
+      await vaultSetBiometric(enabled);
+      setBiometricEnabled(enabled);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update biometric setting');
+    }
   };
 
   const handleChangePIN = () => {
@@ -135,7 +154,7 @@ export default function SettingsScreen() {
                 </View>
                 <Switch
                   value={biometricEnabled}
-                  onValueChange={setBiometricEnabled}
+                  onValueChange={handleBiometricToggle}
                   trackColor={{ false: '#2A2A3A', true: '#6C63FF' }}
                   thumbColor="#FFFFFF"
                 />

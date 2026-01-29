@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Pressable, TextInput, Alert } from 'react-native';
+import { StyleSheet, View, Text, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -126,14 +126,18 @@ export default function VaultUnlockScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#6C63FF" />
+        <Text style={[styles.loadingText, { marginTop: 16 }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <View style={styles.header}>
         <FontAwesome name="lock" size={64} color="#6C63FF" />
         <Text style={styles.title}>
@@ -218,7 +222,7 @@ export default function VaultUnlockScreen() {
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

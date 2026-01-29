@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A0A0F"
     },
     "ios": {
       "supportsTablet": true
@@ -27,7 +27,16 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "ProvisionKey",
+      "shortName": "ProvisionKey",
+      "description": "Your crypto emergency guide & encrypted vault",
+      "lang": "en",
+      "themeColor": "#0A0A0F",
+      "backgroundColor": "#0A0A0F",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-router"
