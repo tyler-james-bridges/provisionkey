@@ -1,4 +1,4 @@
-import { StyleSheet, ScrollView, View, Text, Pressable, Alert } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -47,7 +47,8 @@ export default function VaultDashboardScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading vault...</Text>
+        <ActivityIndicator size="large" color="#6C63FF" />
+        <Text style={[styles.loadingText, { marginTop: 16 }]}>Loading vault...</Text>
       </View>
     );
   }

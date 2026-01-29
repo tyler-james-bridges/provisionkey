@@ -1,4 +1,4 @@
-import { StyleSheet, ScrollView, View, Text, Pressable } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, Pressable, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import EmergencyBanner from '@/components/EmergencyBanner';
@@ -17,6 +17,7 @@ export default function HomeScreen() {
   ].filter(Boolean);
 
   return (
+    <SafeAreaView style={styles.safeArea}>
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
@@ -91,10 +92,15 @@ export default function HomeScreen() {
         </View>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0A0A0F',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0A0A0F',
